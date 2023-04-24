@@ -547,8 +547,8 @@ void SplitUVPlane(const uint8_t* src_uv,
 #endif
 
   for (y = 0; y < height; ++y) {
-    // Copy a row of UV.
-    SplitUVRow(src_uv, dst_u, dst_v, width);
+    // Copy a row of UV, number of UV pairs is half width
+    SplitUVRow(src_uv, dst_u, dst_v, width / 2);
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
     src_uv += src_stride_uv;
