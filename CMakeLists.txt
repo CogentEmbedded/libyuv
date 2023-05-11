@@ -3,16 +3,20 @@
 # Run with -DTEST=ON to build unit tests
 
 PROJECT ( YUV C CXX )	# "C" is required even for C++ projects
-CMAKE_MINIMUM_REQUIRED( VERSION 2.8.12 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.16 )
 OPTION( TEST "Built unit tests" OFF )
+OPTION(WITH_TOOLS "Build tools" OFF)
+OPTION(WITH_JPEG "Enable JPEG support" OFF)
+
+INCLUDE(GNUInstallDirs)
+INCLUDE(CMakePackageConfigHelpers)
 
 SET ( ly_base_dir	${PROJECT_SOURCE_DIR} )
 SET ( ly_src_dir	${ly_base_dir}/source )
 SET ( ly_inc_dir	${ly_base_dir}/include )
 SET ( ly_tst_dir	${ly_base_dir}/unit_test )
 SET ( ly_lib_name	yuv )
-SET ( ly_lib_static	${ly_lib_name} )
-SET ( ly_lib_shared	${ly_lib_name}_shared )
+SET ( ly_lib_filename	"lib${ly_lib_name}" )
 
 FILE ( GLOB_RECURSE	ly_source_files ${ly_src_dir}/*.cc )
 LIST ( SORT			ly_source_files )
@@ -26,30 +30,26 @@ if(MSVC)
   ADD_DEFINITIONS ( -D_CRT_SECURE_NO_WARNINGS )
 endif()
 
-# this creates the static library (.a)
-ADD_LIBRARY				( ${ly_lib_static} STATIC ${ly_source_files} )
+ADD_LIBRARY	(${ly_lib_name} ${ly_source_files} )
+ADD_LIBRARY(Libyuv::Libyuv ALIAS ${ly_lib_name})
 
-# this creates the shared library (.so)
-ADD_LIBRARY				( ${ly_lib_shared} SHARED ${ly_source_files} )
-SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES OUTPUT_NAME "${ly_lib_name}" )
-SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES PREFIX "lib" )
-if(WIN32)
-  SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES IMPORT_PREFIX "lib" )
+if (WITH_TOOLS)
+  # this creates the conversion tool
+  ADD_EXECUTABLE			( yuvconvert ${ly_base_dir}/util/yuvconvert.cc )
+  TARGET_LINK_LIBRARIES	( yuvconvert ${ly_lib_name} )
+
+  # this creates the yuvconstants tool
+  ADD_EXECUTABLE      ( yuvconstants ${ly_base_dir}/util/yuvconstants.c )
+  TARGET_LINK_LIBRARIES  ( yuvconstants ${ly_lib_name} )
 endif()
 
-# this creates the conversion tool
-ADD_EXECUTABLE			( yuvconvert ${ly_base_dir}/util/yuvconvert.cc )
-TARGET_LINK_LIBRARIES	( yuvconvert ${ly_lib_static} )
-
-# this creates the yuvconstants tool
-ADD_EXECUTABLE      ( yuvconstants ${ly_base_dir}/util/yuvconstants.c )
-TARGET_LINK_LIBRARIES  ( yuvconstants ${ly_lib_static} )
-
-find_package ( JPEG )
-if (JPEG_FOUND)
-  include_directories( ${JPEG_INCLUDE_DIR} )
-  target_link_libraries( ${ly_lib_shared} ${JPEG_LIBRARY} )
-  add_definitions( -DHAVE_JPEG )
+if (WITH_JPEG)
+  find_package ( JPEG )
+  if (JPEG_FOUND)
+    target_include_directories(${ly_lib_name} PRIVATE ${JPEG_INCLUDE_DIR} )
+    target_link_libraries(${ly_lib_name} PRIVATE ${JPEG_LIBRARY} )
+    target_compile_definitions(${ly_lib_name} PRIVATE HAVE_JPEG )
+  endif()
 endif()
 
 if(TEST)
@@ -94,12 +94,42 @@ if(TEST)
   endif()
 endif()
 
+set_target_properties(${ly_lib_name} PROPERTIES EXPORT_NAME Libyuv)
+INSTALL ( TARGETS ${ly_lib_name}
+  EXPORT ${ly_lib_name}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  COMPONENT devel
+)
 
-# install the conversion tool, .so, .a, and all the header files
-INSTALL ( PROGRAMS ${CMAKE_BINARY_DIR}/yuvconvert			DESTINATION bin )
-INSTALL ( TARGETS ${ly_lib_static}						DESTINATION lib )
-INSTALL ( TARGETS ${ly_lib_shared} LIBRARY				DESTINATION lib RUNTIME DESTINATION bin )
-INSTALL ( DIRECTORY ${PROJECT_SOURCE_DIR}/include/		DESTINATION include )
+INSTALL (DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  COMPONENT devel)
+
+configure_package_config_file(cmake/${ly_lib_filename}Config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${ly_lib_filename}Config.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${ly_lib_filename}
+    PATH_VARS
+        CMAKE_INSTALL_INCLUDEDIR
+        CMAKE_INSTALL_LIBDIR)
+
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/${ly_lib_filename}Config.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${ly_lib_filename}
+  COMPONENT devel)
+
+install(
+  EXPORT ${ly_lib_name}
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${ly_lib_filename}
+  FILE ${ly_lib_filename}Targets.cmake
+  NAMESPACE Libyuv::)
+
+if (WITH_TOOLS)
+  INSTALL ( PROGRAMS
+    ${CMAKE_BINARY_DIR}/yuvconvert
+    ${CMAKE_BINARY_DIR}/yuvconstants
+    DESTINATION ${CMAKE_INSTALL_BINDIR} )
+endif()
 
 # create the .deb and .rpm packages using cpack
 INCLUDE ( CM_linux_packages.cmake )
