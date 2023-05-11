@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+if (NOT @LIBYUV_DISABLE_JPEG@)
+    find_dependency(JPEG)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/@ly_lib_filename@Targets.cmake")
+
