@@ -72,8 +72,6 @@ set ( ly_common_source_files
 file ( GLOB_RECURSE	ly_unittest_sources ${ly_tst_dir}/*.cc )
 list ( SORT			ly_unittest_sources )
 
-include_directories( BEFORE ${ly_inc_dir} )
-
 if(MSVC)
   add_definitions ( -D_CRT_SECURE_NO_WARNINGS )
 endif()
@@ -84,6 +82,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Build the set of objects that do not need to be compiled with flags to enable
 # particular architecture features.
 add_library( ${ly_lib_name}_common_objects OBJECT ${ly_common_source_files} )
+target_include_directories( ${ly_lib_name}_common_objects PRIVATE $<BUILD_INTERFACE:${ly_inc_dir}>)
 set(ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_common_objects>)
 
 string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSPROC)
@@ -106,6 +105,7 @@ if(NOT MSVC)
       ${ly_src_dir}/row_neon.cc
       ${ly_src_dir}/scale_neon.cc)
     target_compile_options(${ly_lib_name}_neon PRIVATE -mfpu=neon)
+    target_include_directories(${ly_lib_name}_neon PRIVATE $<BUILD_INTERFACE:${ly_inc_dir}>)
     list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_neon>)
   endif()
 
@@ -117,12 +117,14 @@ if(NOT MSVC)
       ${ly_src_dir}/row_neon64.cc
       ${ly_src_dir}/scale_neon64.cc)
     target_compile_options(${ly_lib_name}_neon64 PRIVATE -march=armv8.2-a+dotprod+i8mm)
+    target_include_directories(${ly_lib_name}_neon64 PRIVATE $<BUILD_INTERFACE:${ly_inc_dir}>)
     list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_neon64>)
 
     # Enable AArch64 SVE kernels.
     add_library(${ly_lib_name}_sve OBJECT
       ${ly_src_dir}/row_sve.cc)
     target_compile_options(${ly_lib_name}_sve PRIVATE -march=armv8.5-a+i8mm+sve2)
+    target_include_directories(${ly_lib_name}_sve PRIVATE $<BUILD_INTERFACE:${ly_inc_dir}>)
     list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sve>)
 
     set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
@@ -145,6 +147,7 @@ int main(void) { return 0; }
         ${ly_src_dir}/row_sme.cc
         ${ly_src_dir}/scale_sme.cc)
       target_compile_options(${ly_lib_name}_sme PRIVATE -march=armv9-a+i8mm+sme)
+      target_include_directories(${ly_lib_name}_sme PRIVATE $<BUILD_INTERFACE:${ly_inc_dir}>)
       list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sme>)
     else()
       add_definitions(-DLIBYUV_DISABLE_SME)
@@ -177,8 +180,14 @@ if(LOONGARCH64)
   endif()
 endif()
 
-ADD_LIBRARY	(${ly_lib_name} ${ly_source_files} )
+ADD_LIBRARY	(${ly_lib_name} ${ly_lib_parts} )
 ADD_LIBRARY(Libyuv::Libyuv ALIAS ${ly_lib_name})
+
+TARGET_INCLUDE_DIRECTORIES(${ly_lib_name}
+  PUBLIC
+    $<BUILD_INTERFACE:${ly_inc_dir}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
 if (WITH_TOOLS)
   # this creates the conversion tool
