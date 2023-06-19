@@ -24,14 +24,18 @@ LIST ( SORT			ly_source_files )
 FILE ( GLOB_RECURSE	ly_unittest_sources ${ly_tst_dir}/*.cc )
 LIST ( SORT			ly_unittest_sources )
 
-INCLUDE_DIRECTORIES( BEFORE ${ly_inc_dir} )
-
 if(MSVC)
   ADD_DEFINITIONS ( -D_CRT_SECURE_NO_WARNINGS )
 endif()
 
 ADD_LIBRARY	(${ly_lib_name} ${ly_source_files} )
 ADD_LIBRARY(Libyuv::Libyuv ALIAS ${ly_lib_name})
+
+TARGET_INCLUDE_DIRECTORIES(${ly_lib_name}
+  PUBLIC
+    $<BUILD_INTERFACE:${ly_inc_dir}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
 if (WITH_TOOLS)
   # this creates the conversion tool
