@@ -126,13 +126,15 @@ install(
   EXPORT ${ly_lib_name}
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${ly_lib_filename}
   FILE ${ly_lib_filename}Targets.cmake
-  NAMESPACE Libyuv::)
+  NAMESPACE Libyuv::
+  COMPONENT devel)
 
 if (WITH_TOOLS)
   INSTALL ( PROGRAMS
     ${CMAKE_BINARY_DIR}/yuvconvert
     ${CMAKE_BINARY_DIR}/yuvconstants
-    DESTINATION ${CMAKE_INSTALL_BINDIR} )
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT application)
 endif()
 
 # create the .deb and .rpm packages using cpack
