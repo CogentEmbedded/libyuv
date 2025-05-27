@@ -249,7 +249,7 @@ if(UNIT_TEST)
   endif()
 endif()
 
-set_target_properties(${ly_lib_name} PROPERTIES EXPORT_NAME Libyuv)
+set_target_properties(${ly_lib_name} PROPERTIES EXPORT_NAME Libyuv POSITION_INDEPENDENT_CODE ON)
 INSTALL ( TARGETS ${ly_lib_name}
   EXPORT ${ly_lib_name}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
