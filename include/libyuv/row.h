@@ -545,6 +545,7 @@ extern "C" {
 #define HAS_RGBATOYJROW_NEON_DOTPROD
 #define HAS_RGBATOYROW_NEON_DOTPROD
 
+#if !defined(LIBYUV_DISABLE_I8MM)
 #define HAS_ABGRTOUVJROW_NEON_I8MM
 #define HAS_ABGRTOUVROW_NEON_I8MM
 #define HAS_ARGBCOLORMATRIXROW_NEON_I8MM
@@ -554,6 +555,7 @@ extern "C" {
 #define HAS_ARGBTOUVROW_NEON_I8MM
 #define HAS_BGRATOUVROW_NEON_I8MM
 #define HAS_RGBATOUVROW_NEON_I8MM
+#endif
 #endif
 
 // The following are available on AArch64 SVE platforms:

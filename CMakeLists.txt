@@ -12,6 +12,7 @@ OPTION(WITH_JPEG "Enable JPEG support" OFF)
 INCLUDE(GNUInstallDirs)
 INCLUDE(CMakePackageConfigHelpers)
 INCLUDE(CheckCSourceCompiles)
+INCLUDE(CheckCCompilerFlag)
 
 SET ( ly_base_dir	${PROJECT_SOURCE_DIR} )
 SET ( ly_src_dir	${ly_base_dir}/source )
@@ -93,6 +94,7 @@ if(LOONGARCH64MATCH GREATER "-1")
   set(LOONGARCH64 1)
 endif()
 
+
 if(NOT MSVC)
   string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" arch_lowercase)
 
@@ -111,21 +113,34 @@ if(NOT MSVC)
 
   if(arch_lowercase STREQUAL "aarch64" OR arch_lowercase STREQUAL "arm64")
     # Enable AArch64 Neon dot-product and i8mm kernels.
+    check_c_source_compiles("-march=armv8.2-a+dotprod+i8mm" CAN_COMPILE_I8MM)
     add_library(${ly_lib_name}_neon64 OBJECT
       ${ly_src_dir}/compare_neon64.cc
       ${ly_src_dir}/rotate_neon64.cc
       ${ly_src_dir}/row_neon64.cc
       ${ly_src_dir}/scale_neon64.cc)
-    target_compile_options(${ly_lib_name}_neon64 PRIVATE -march=armv8.2-a+dotprod+i8mm)
+    if (CAN_COMPILE_I8MM)
+      target_compile_options(${ly_lib_name}_neon64 PRIVATE -march=armv8.2-a+dotprod+i8mm)
+    else()
+      message(STATUS "Disabling I8MM extensions")
+      target_compile_options(${ly_lib_name}_neon64 PRIVATE -march=armv8.2-a+dotprod)
+      add_definitions(-DLIBYUV_DISABLE_I8MM)
+    endif()
     target_include_directories(${ly_lib_name}_neon64 PRIVATE $<BUILD_INTERFACE:${ly_inc_dir}>)
     list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_neon64>)
 
     # Enable AArch64 SVE kernels.
-    add_library(${ly_lib_name}_sve OBJECT
-      ${ly_src_dir}/row_sve.cc)
-    target_compile_options(${ly_lib_name}_sve PRIVATE -march=armv8.5-a+i8mm+sve2)
-    target_include_directories(${ly_lib_name}_sve PRIVATE $<BUILD_INTERFACE:${ly_inc_dir}>)
-    list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sve>)
+    check_c_source_compiles("-march=armv8.5-a+i8mm+sve2" CAN_COMPILE_SVE2)
+    if (CAN_COMPILE_SVE2)
+      add_library(${ly_lib_name}_sve OBJECT
+        ${ly_src_dir}/row_sve.cc)
+      target_compile_options(${ly_lib_name}_sve PRIVATE -march=armv8.5-a+i8mm+sve2)
+      target_include_directories(${ly_lib_name}_sve PRIVATE $<BUILD_INTERFACE:${ly_inc_dir}>)
+      list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sve>)
+    else()
+      message(STATUS "Disabling SVE extensions")
+      add_definitions(-DLIBYUV_DISABLE_SVE)
+    endif()
 
     set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
     set(OLD_CMAKE_TRY_COMPILE_TARGET_TYPE ${CMAKE_TRY_COMPILE_TARGET_TYPE})
