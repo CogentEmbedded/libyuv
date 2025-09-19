@@ -2855,6 +2855,7 @@ void RGBToUV444MatrixRow_NEON(const uint8_t* src_rgb,
         "v27");
 }
 
+#if !defined(LIBYUV_DISABLE_I8MM)
 void ARGBToUV444MatrixRow_NEON_I8MM(const uint8_t* src_argb,
                                     uint8_t* dst_u,
                                     uint8_t* dst_v,
@@ -2892,6 +2893,7 @@ void ARGBToUV444MatrixRow_NEON_I8MM(const uint8_t* src_argb,
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v16", "v17",
         "v29");
 }
+#endif
 
 // RGB to BT601 coefficients
 // UB   0.875 coefficient = 112
@@ -3281,6 +3283,7 @@ void ARGB4444ToUVRow_NEON(const uint8_t* src_argb4444,
   );
 }
 
+#if !defined(LIBYUV_DISABLE_I8MM)
 // Process any of ARGB, ABGR, BGRA, RGBA, by adjusting the ArgbConstants layout.
 static void ARGBToUVMatrixRow_NEON_I8MM_Impl(const uint8_t* src,
                                              int src_stride,
@@ -3360,6 +3363,7 @@ void ARGBToUVMatrixRow_NEON_I8MM(const uint8_t* src_argb,
   ARGBToUVMatrixRow_NEON_I8MM_Impl(src_argb, src_stride_argb, dst_u, dst_v,
                                    width, c);
 }
+#endif
 
 void RGB565ToYRow_NEON(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
   asm volatile(
@@ -4135,6 +4139,7 @@ void ARGBColorMatrixRow_NEON(const uint8_t* src_argb,
         "v17", "v18", "v19", "v22", "v23", "v24", "v25");
 }
 
+#if !defined(LIBYUV_DISABLE_I8MM)
 void ARGBColorMatrixRow_NEON_I8MM(const uint8_t* src_argb,
                                   uint8_t* dst_argb,
                                   const int8_t* matrix_argb,
@@ -4190,6 +4195,7 @@ void ARGBColorMatrixRow_NEON_I8MM(const uint8_t* src_argb,
       : "cc", "memory", "v0", "v1", "v16", "v17", "v18", "v19", "v20", "v21",
         "v22", "v23", "v31");
 }
+#endif
 
 // Multiply 2 rows of ARGB pixels together, 8 pixels at a time.
 void ARGBMultiplyRow_NEON(const uint8_t* src_argb,
