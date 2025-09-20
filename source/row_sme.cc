@@ -16,6 +16,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
+#if !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
+
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
     defined(__aarch64__)
 
@@ -1117,6 +1119,7 @@ __arm_locally_streaming void ARGBToYMatrixRow_SME(
 
 #endif  // !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) &&
         // defined(__aarch64__)
+#endif // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)
 
 #ifdef __cplusplus
 }  // extern "C"
