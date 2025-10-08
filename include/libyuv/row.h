@@ -680,7 +680,6 @@ extern "C" {
 #define HAS_YUY2TOARGBROW_SVE2
 #define HAS_YUY2TOUVROW_SVE2
 #define HAS_YUY2TOYROW_SVE2
-#endif
 
 // The following are available on AArch64 SME platforms:
 #if !defined(LIBYUV_DISABLE_SME) && defined(CLANG_HAS_SME) && \
@@ -728,6 +727,7 @@ extern "C" {
 #define HAS_P410TOAR30ROW_SME
 #define HAS_P410TOARGBROW_SME
 #define HAS_YUY2TOARGBROW_SME
+#endif
 #endif
 
 // The following are available on AArch64 platforms:
