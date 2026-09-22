@@ -140,7 +140,7 @@ if(NOT MSVC)
     set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -march=armv8.5-a+i8mm+sme")
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
     check_c_source_compiles("
-__arm_locally_streaming void func(void) { }
+__arm_locally_streaming __arm_new(\"za\") void func(void) { }
 int main(void) { return 0; }
     " CAN_COMPILE_SME)
     set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQUIRED_FLAGS})
